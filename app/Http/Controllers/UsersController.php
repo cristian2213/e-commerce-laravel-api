@@ -2,23 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Role;
-use App\Models\User;
 use Carbon\Carbon;
+use App\Models\User;
+use App\Models\Role;
 use Illuminate\Http\Request;
+use App\services\HttpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Lukasoppermann\Httpstatus\Httpstatus;
 use Lukasoppermann\Httpstatus\Httpstatuscodes;
 
+
 class UsersController extends Controller implements Httpstatuscodes
 {
     public Httpstatus $httpStatus;
+    public HttpService $httpService;
 
-    public function __construct()
+    public function __construct(HttpService $httpService)
     {
         $this->httpStatus = new Httpstatus();
+        $this->httpService = $httpService;
     }
 
     /**
@@ -29,16 +33,12 @@ class UsersController extends Controller implements Httpstatuscodes
     public function index(): JsonResponse
     {
         try {
-            $users = User::paginate();
+            $users = User::with('roles')->paginate(10);
             return response()->json([
                 'users' => $users
             ], self::HTTP_OK);
         } catch (\Throwable $th) {
-            // FIXME CREATE A HELPER CLASS TO MANAGE THIS REPONSE
-            return response()->json([
-                'message' => $this->httpStatus->getReasonPhrase(self::HTTP_INTERNAL_SERVER_ERROR),
-                'statusCode' => self::HTTP_INTERNAL_SERVER_ERROR
-            ], self::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->httpService->manageResponseError($th);
         }
     }
 
@@ -54,10 +54,6 @@ class UsersController extends Controller implements Httpstatuscodes
             $user = DB::table('users')->where('email', $request->email)->first();
             if ($user)
                 return $this->returnJSONReponse(self::HTTP_NOT_FOUND, "The email $request->email exists already.");
-
-            // if (Hash::check('plain-text', $hashedPassword)) {
-            //     // The passwords match...
-            // }
 
             ['password' => $password, 'confirmPassword' => $confirmPassword, 'roles' => $roles] = $request->all();
 
@@ -87,11 +83,7 @@ class UsersController extends Controller implements Httpstatuscodes
             $newUser['roles'] = $newRoles;
             return response()->json($newUser);
         } catch (\Throwable $th) {
-            dd($th);
-            return response()->json([
-                'message' => $this->httpStatus->getReasonPhrase(self::HTTP_INTERNAL_SERVER_ERROR),
-                'statusCode' => self::HTTP_INTERNAL_SERVER_ERROR
-            ], self::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->httpService->manageResponseError($th);
         }
     }
 
@@ -110,10 +102,7 @@ class UsersController extends Controller implements Httpstatuscodes
 
             return response()->json($user, self::HTTP_OK);
         } catch (\Throwable $th) {
-            return response()->json([
-                'message' => $this->httpStatus->getReasonPhrase(self::HTTP_INTERNAL_SERVER_ERROR),
-                'statusCode' => self::HTTP_INTERNAL_SERVER_ERROR
-            ], self::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->httpService->manageResponseError($th);
         }
     }
 
@@ -152,11 +141,7 @@ class UsersController extends Controller implements Httpstatuscodes
 
             return response()->json($updatedUser);
         } catch (\Throwable $th) {
-            dd($th);
-            return response()->json([
-                'message' => $this->httpStatus->getReasonPhrase(self::HTTP_INTERNAL_SERVER_ERROR),
-                'statusCode' => self::HTTP_INTERNAL_SERVER_ERROR
-            ], self::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->httpService->manageResponseError($th);
         }
     }
 
@@ -187,10 +172,7 @@ class UsersController extends Controller implements Httpstatuscodes
                 'message' => 'User deleted',
             ], self::HTTP_OK);
         } catch (\Throwable $th) {
-            return response()->json([
-                'message' => $this->httpStatus->getReasonPhrase(self::HTTP_INTERNAL_SERVER_ERROR),
-                'statusCode' => self::HTTP_INTERNAL_SERVER_ERROR
-            ], self::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->httpService->manageResponseError($th);
         }
     }
 

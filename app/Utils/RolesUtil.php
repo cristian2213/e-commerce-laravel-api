@@ -3,7 +3,7 @@
 namespace App\Utils;
 
 
-trait RolesUtils
+trait RolesUtil
 {
 
     /**
