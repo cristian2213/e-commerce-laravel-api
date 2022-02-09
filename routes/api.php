@@ -1,8 +1,9 @@
 <?php
 
-use App\Http\Controllers\ProductsController;
-use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+// use App\Http\Controllers\UsersController;
+// use App\Http\Controllers\ProductsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,7 +16,18 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::prefix('/v1')->group(function () {
+Route::prefix('v1')->group(function () {
+
     // Route::apiResource('/user');
     Route::apiResource('/users', 'UsersController');
+
+    Route::group([
+        'middleware' => 'api',
+        'prefix' => 'auth'
+    ], function () {
+        Route::post('/login', [AuthController::class, 'login']);
+        Route::post('/logout', [AuthController::class, 'logOut']);
+        Route::post('/refresh-token', [AuthController::class, 'refreshToken']);
+        Route::post('/get-authenticated-user', [AuthController::class, 'getAuthenticatedUser']);
+    });
 });

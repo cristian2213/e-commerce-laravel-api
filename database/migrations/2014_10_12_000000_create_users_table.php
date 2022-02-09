@@ -22,7 +22,7 @@ class CreateUsersTable extends Migration
             $table->string('token', 255)->nullable();
             $table->timestamp('token_expiration_time')->nullable();
             $table->timestamps();
-            $table->softDeletes();
+            // $table->softDeletes();
         });
     }
 
